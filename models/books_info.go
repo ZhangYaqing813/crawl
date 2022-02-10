@@ -8,39 +8,64 @@ import (
 )
 
 type BooksInfo struct {
-	Id		int
-	Name 	string
-	Author  string
-	Score	float32
-	Isbn	int
+	Id     int
+	Name   string
+	Author string
+	Score  float64
+	Isbn   int
 }
 
-// GetTotalPages 获取当前页面中最大的页面数量
-func GetTotalPages(bookHtml string) int {
-	// expression 正则表达式内容
-	expression := `<a href="/tag/编程.*?type=T" >(\d+?)</a>`
+func GetBookName(strHtml string) (name string) {
+	expression := `<span property="v:itemreviewed">(.*?)</span>`
+	expression2 := `<span class="pl">副标题:</span> 从入门到实践<br/>`
 	reg := regexp.MustCompile(expression)
-	result := reg.FindAllStringSubmatch(bookHtml,-1)
+	result := reg.FindAllStringSubmatch(strHtml, -1)
+
+	reg1 := regexp.MustCompile(expression2)
+	result1 := reg1.FindAllStringSubmatch(strHtml, -1)
+
+	if len(result) == 0 {
+		return ""
+	}
+	if len(result1) == 0 {
+		name = result[0][1]
+	} else {
+		name = result[0][1] + ":" + result1[0][1]
+	}
+	return name
+}
+
+func GetBookAuthor(strHtml string) (Author string) {
+	expression := `<a class="" href="/search/.*?">(.*?)</a>`
+	reg := regexp.MustCompile(expression)
+	result := reg.FindAllStringSubmatch(strHtml, -1)
+	//fmt.Println(result)
+	if len(result) == 0 {
+		return ""
+	}
+	return result[0][1]
+}
+
+func GetBookScore(strHtml string) (score float64) {
+	expression := `<strong class=".*?"v:average">(.*?)</strong>`
+	reg := regexp.MustCompile(expression)
+	result := reg.FindAllStringSubmatch(strHtml, -1)
+	//fmt.Println(result)
 	if len(result) == 0 {
 		return 0
 	}
-	pagesNumber,err :=strconv.Atoi( result[len(result)-1][1])
-	if err != nil {
-		panic(err)
-	}
-	return pagesNumber
+	score, _ = strconv.ParseFloat(result[0][1], 64)
+	return score
 }
 
-//GetBookUrl 获取页面中book 的URL信息。
-func GetBookUrl(bookHtml string) []string {
-	// expression 正则表达式内容 提取book 的URL
-	expression := `<a href="(https://book.douban.com/.*?/)" `
-	var urls []string
+func GetBookIsbn(strHtml string) (isbn int) {
+	expression := `<span class="pl">ISBN:</span>(\d+?)<br/>`
 	reg := regexp.MustCompile(expression)
-	result := reg.FindAllStringSubmatch(bookHtml,-1)
-	for i :=0; i<len(result);i++ {
-		urls = append(urls,result[i][1])
+	result := reg.FindAllStringSubmatch(strHtml, -1)
+	//fmt.Println(result)
+	if len(result) == 0 {
+		return 0
 	}
-	return urls
+	isbn, _ = strconv.Atoi(result[0][1])
+	return isbn
 }
-
